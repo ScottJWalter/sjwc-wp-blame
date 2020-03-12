@@ -135,7 +135,7 @@ EOSQL;
 	public static function load_log_hooks() {
 
 		// Include the log hooks
-		require_once( 'class-log-hooks.php' );
+		require_once( 'includes/class-log-hooks.php' );
 
 		// Create new instance
 		return new WPB_Log_Hooks();
@@ -153,7 +153,7 @@ EOSQL;
 	 * @return array $links
 	 */
 	public static function add_donate_link( $links, $file ) {
-
+/*
 		// Check if this is the current plugin
 		if ( $file == 'wp-blame/wp-blame.php' ) {
 
@@ -164,7 +164,7 @@ EOSQL;
 			array_unshift( $links, $plugin_link );
 
 		}
-
+*/
 		return $links;
 
 	}
@@ -251,7 +251,7 @@ EOSQL;
 
 		// Include the logs class for the table
 		if ( 'settings' != $tab ) {
-			require_once( 'class-log-list.php' );
+			require_once( 'includes/class-log-list.php' );
 		}
 		?>
 		<div class="wrap">
