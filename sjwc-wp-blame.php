@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: WP Blame
  * Plugin URI: https://wordpress.org/plugins/wp-blame/
@@ -7,16 +6,15 @@
  * Author: James Cooper
  * Author URI: http://www.corematrixgrid.com/
  * Text Domain: wp-blame
- * Version: 2.1.3
+ * Version: 2.1.4-sjwc
  */
 
-// No thank you
-if ( ! defined('ABSPATH') ) die;
+defined('ABSPATH') || die;
+
 
 new WP_Blame;
 
 class WP_Blame {
-
 	/**
 	 * The plugin version.
 	 * 
@@ -24,7 +22,7 @@ class WP_Blame {
 	 * 
 	 * @var string
 	 */
-	protected static $version = '2.1.2';
+	protected static $version = '2.1.4-sjwc';
 
 	/**
 	 * I blame you for getting me hooked.
@@ -34,19 +32,17 @@ class WP_Blame {
 	 * @return void
 	 */
 	public function __construct() {
+		register_activation_hook( 	__FILE__, array( __CLASS__, 'plugin_install' 	), 10, 0 );
+		register_deactivation_hook( __FILE__, array( __CLASS__, 'plugin_uninstall' 	), 10, 0 );
 
-		register_activation_hook( __FILE__, array( __CLASS__, 'plugin_install' ), 10, 0 );
-		register_deactivation_hook( __FILE__, array( __CLASS__, 'plugin_uninstall' ), 10, 0 );
+		add_action( 'plugins_loaded'			, array( __CLASS__, 'load_text_domain' 		), 10, 0 );
+		add_action( 'plugins_loaded'			, array( __CLASS__, 'load_log_hooks' 		), 10, 0 );
+		add_action( 'admin_menu'				, array( __CLASS__, 'add_admin_pages' 		), 10, 0 );
+		add_action( 'load-tools_page_wpb_logs'	, array( __CLASS__, 'add_screen_options'	), 10, 0 );
+		add_action( 'admin_init'				, array( __CLASS__, 'register_settings' 	), 10, 0 );
 
-		add_action( 'plugins_loaded', array( __CLASS__, 'load_text_domain' ), 10, 0 );
-		add_action( 'plugins_loaded', array( __CLASS__, 'load_log_hooks' ), 10, 0 );
-		add_action( 'admin_menu', array( __CLASS__, 'add_admin_pages' ), 10, 0 );
-		add_action( 'load-tools_page_wpb_logs', array( __CLASS__, 'add_screen_options' ), 10, 0 );
-		add_action( 'admin_init', array( __CLASS__, 'register_settings' ), 10, 0 );
-
-		add_filter( 'plugin_action_links', array( __CLASS__, 'add_donate_link' ), 10, 2 );
-		add_filter( 'set-screen-option', array( __CLASS__, 'set_screen_options' ), 10, 3 );
-
+		add_filter( 'plugin_action_links'	, array( __CLASS__, 'add_donate_link' 		), 10, 2 );
+		add_filter( 'set-screen-option'		, array( __CLASS__, 'set_screen_options'	), 10, 3 );
 	}
 
 	/**
@@ -72,25 +68,27 @@ class WP_Blame {
 		$charset = $wpdb->get_charset_collate();
 
 		// Create the SQL schema for the new table
-		$query = "CREATE TABLE " . $table_name . " (
-			log_id mediumint(9) NOT NULL AUTO_INCREMENT,
-			site_id mediumint(9) NOT NULL,
-			user_id mediumint(9) NOT NULL,
-			host_ip varchar(50) DEFAULT '' NOT NULL,
-			object_id mediumint(9) NOT NULL,
-			slug varchar(100) DEFAULT '' NOT NULL,
-			setting varchar(25) DEFAULT '' NOT NULL,
-			timestamp datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-			action varchar(25) DEFAULT '' NOT NULL,
-			notes varchar(250) DEFAULT '' NOT NULL,
-			PRIMARY KEY  (log_id)
-		) $charset;";
+		$query = <<<EOSQL
+CREATE TABLE $table_name (
+	log_id 		mediumint(9)									NOT NULL AUTO_INCREMENT,
+	site_id 	mediumint(9)									NOT NULL,
+	user_id 	mediumint(9)									NOT NULL,
+	host_ip 	varchar(50) 	DEFAULT ''						NOT NULL,
+	object_id 	mediumint(9) 									NOT NULL,
+	slug 		varchar(100) 	DEFAULT '' 						NOT NULL,
+	setting 	varchar(25) 	DEFAULT '' 						NOT NULL,
+	timestamp 	datetime 		DEFAULT '0000-00-00 00:00:00'	NOT NULL,
+	action 		varchar(25) 	DEFAULT '' 						NOT NULL,
+	notes 		varchar(250) 	DEFAULT '' 						NOT NULL,
+	PRIMARY KEY  (log_id)
+) $charset;
+EOSQL;	
 
 		// Run the query
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $table_name );
 		$wpdb->query( $query );
 
 		return true;
-
 	}
 
 	/**
@@ -102,7 +100,6 @@ class WP_Blame {
 	 * @return boolean
 	 */
 	public static function plugin_uninstall() {
-
 		global $wpdb;
 
 		// Delete the options
@@ -113,7 +110,6 @@ class WP_Blame {
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'logs' );
 
 		return true;
-
 	}
 
 	/**
@@ -257,42 +253,38 @@ class WP_Blame {
 		if ( 'settings' != $tab ) {
 			require_once( 'class-log-list.php' );
 		}
-
 		?>
-
-			<div class="wrap">
-				<h1 class="page-title"><?php _e('Logs', 'wp-blame'); ?></h1>
-				<h2 class="nav-tab-wrapper wp-clearfix">
-					<a href="<?php echo admin_url( 'tools.php?page=wpb_logs&tab=logs' ); ?>" class="nav-tab<?php if ( 'settings' != $tab ) : ?> nav-tab-active<?php endif; ?>"><?php _e('History', 'wp-blame'); ?></a>
-					<a href="<?php echo admin_url( 'tools.php?page=wpb_logs&tab=settings' ); ?>" class="nav-tab<?php if ( 'settings' == $tab ) : ?> nav-tab-active<?php endif; ?>"><?php _e('Settings', 'wp-blame'); ?></a>
-				</h2>
-				<?php if ( 'settings' == $tab ) : ?>
-					<div id="settings" class="tab-content">
-						<?php settings_errors(); ?>
-						<form method="post" action="options.php">
-							<table class="dtjwpb-form form-table">
-								<tbody>
-									<?php settings_fields('wpb_settings_fields'); ?>
-									<?php do_settings_sections('wpb_settings_section'); ?>
-								</tbody>
-							</table>
-							<?php submit_button( __('Save Settings', 'wp-blame'), 'primary' ); ?>
+		<div class="wrap">
+			<h1 class="page-title"><?php _e('Logs', 'wp-blame'); ?></h1>
+			<h2 class="nav-tab-wrapper wp-clearfix">
+				<a href="<?php echo admin_url( 'tools.php?page=wpb_logs&tab=logs' ); ?>" class="nav-tab<?php if ( 'settings' != $tab ) : ?> nav-tab-active<?php endif; ?>"><?php _e('History', 'wp-blame'); ?></a>
+				<a href="<?php echo admin_url( 'tools.php?page=wpb_logs&tab=settings' ); ?>" class="nav-tab<?php if ( 'settings' == $tab ) : ?> nav-tab-active<?php endif; ?>"><?php _e('Settings', 'wp-blame'); ?></a>
+			</h2>
+			<?php if ( 'settings' == $tab ) : ?>
+				<div id="settings" class="tab-content">
+					<?php settings_errors(); ?>
+					<form method="post" action="options.php">
+						<table class="dtjwpb-form form-table">
+							<tbody>
+								<?php settings_fields('wpb_settings_fields'); ?>
+								<?php do_settings_sections('wpb_settings_section'); ?>
+							</tbody>
+						</table>
+						<?php submit_button( __('Save Settings', 'wp-blame'), 'primary' ); ?>
+					</form>
+				</div>
+			<?php else : ?>
+				<div id="logs" class="tab-content">
+					<div class="wrap">
+						<form method="post">
+							<?php $table = new WPB_Log_List(); ?>
+							<?php $table->display(); ?>
 						</form>
 					</div>
-				<?php else : ?>
-					<div id="logs" class="tab-content">
-						<div class="wrap">
-							<form method="post">
-								<?php $table = new WPB_Log_List(); ?>
-								<?php $table->display(); ?>
-							</form>
-						</div>
-					</div>
-				<?php endif; ?>
-			</div>
-
+				</div>
+			<?php endif; ?>
+		</div>
 		<?php
-
 	}
 
 	/**
@@ -303,7 +295,6 @@ class WP_Blame {
 	 * @return void
 	 */
 	public static function register_settings() {
-
 		// Create the section
 		add_settings_section( 'wpb_settings_group', false, false, 'wpb_settings_section' );
 
@@ -312,7 +303,6 @@ class WP_Blame {
 
 		// Register the settings
 		register_setting( 'wpb_settings_fields', 'wpb_user_whitelist', 'esc_attr');
-
 	}
 
 	/**
@@ -323,11 +313,18 @@ class WP_Blame {
 	 * @return mixed
 	 */
 	public static function wpb_user_whitelist_template( $args ) {
-
-		echo '<p><textarea style="min-width: 320px; min-height: 100px;" class="text-area ' . $args[0] . '" id="' . $args[0] . '" name="' . $args[0] . '" aria-describedby="description-' . $args[0] . '">' . get_option( $args[0] ) . '</textarea></p>';
-		echo '<p class="description" id="description-' . $args[0] . '">' . __('The usernames of people who should not have their actions logged.', 'wp-blame') . '</p>';
-
+		?>
+		<p><textarea 
+			style="min-width: 320px; min-height: 100px;" 
+			class="text-area {$args[0]}" 
+			id="{$args[0]}" 
+			name="{$args[0]}" 
+			aria-describedby="description-{$args[0]}"
+			><?php echo get_option( $args[0] ); ?></textarea></p>
+		<p class="description" id="description-{$args[0]}"
+			><?php echo __( 'The usernames of people who should not have their actions logged.', 'wp-blame' ); ?></p>
+		<?php
+		// echo '<p><textarea style="min-width: 320px; min-height: 100px;" class="text-area ' . $args[0] . '" id="' . $args[0] . '" name="' . $args[0] . '" aria-describedby="description-' . $args[0] . '">' . get_option( $args[0] ) . '</textarea></p>';
+		// echo '<p class="description" id="description-' . $args[0] . '">' . __('The usernames of people who should not have their actions logged.', 'wp-blame') . '</p>';
 	}
-
 }
-

@@ -351,11 +351,12 @@ class WPB_Log_List extends WP_List_Table {
 		$per_page = get_user_meta( get_current_user_id(), 'wpb_logs_per_page', true );
 
 		if ( false === $per_page || $per_page < 1 ) {
-
 			$per_page = $screen->get_option( 'wpb_logs_per_page', 20 );
-
 		}
 
+		// SJWC:  force per_page one lase time to avoid div by zero
+		$per_page = $per_page ?? 20;
+		
 		$columns = $this->get_columns();
 		$hidden = array();
 		$sortable = $this->get_sortable_columns();

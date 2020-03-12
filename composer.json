@@ -5,9 +5,46 @@
     "license": "GPL-2.0-or-later",
     "authors": [
         {
-            "name": "Scott Walter",
-            "email": "sjwalter@gmail.com"
+            "name": "Scott J. Walter",
+            "email": "scott@scottjwalter.consulting",
+            "homepage": "https://scottjwalter.consulting/",
+            "role": "Developer"
         }
     ],
-    "require": {}
+    "support": {
+        "issues": "https://scottjwalter.consulting",
+        "email": "support@scottjwalter.consulting",
+        "source": "https://bitbucket.org/sjwconsulting/sjwc-common-library.git"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "composer/installers": "~1.0",
+        "eloquent/composer-npm-bridge": "^4.1",
+        "roave/security-advisories": "dev-master",
+        "monolog/monolog": "^1.12",
+        "sensiolabs/security-checker": "^6.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.2",
+        "10up/wp_mock": "dev-master",
+        "10up/phpcs-composer": "dev-master",
+        "vimeo/psalm": "^3.9",
+        "kint-php/kint": "^3.3"
+    },
+    "scripts": {
+        "psalm": [
+            "vendor/bin/psalm"
+        ],
+        "lint": "./vendor/bin/phpcs .",
+        "lint-fix": "./vendor/bin/phpcbf .",
+        "security-check": [
+            "@composer update --dry-run roave/security-advisories"
+        ]
+    }
 }
