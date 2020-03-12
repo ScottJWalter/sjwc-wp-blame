@@ -1,0 +1,13 @@
+{
+    "name": "scottjwalter/sjwc-wp-blame",
+    "description": "Fork of the WP-Blame plugin",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Scott Walter",
+            "email": "sjwalter@gmail.com"
+        }
+    ],
+    "require": {}
+}
